@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JARVIS</title>
+<style>
+body{background:#000;color:#00e5ff;font-family:monospace;text-align:center;padding:20px}
+#jarvis{width:150px;height:150px;border:3px solid #00e5ff;border-radius:50%;margin:20px auto;box-shadow:0 0 30px #00e5ff}
+button{background:#00e5ff;color:#000;border:none;padding:15px 30px;font-size:18px;border-radius:30px;margin:10px}
+input{padding:10px;width:80%;border-radius:10px;border:1px solid #00e5ff;background:#111;color:#fff}
+</style>
+</head>
+<body>
+<h1>JARVIS</h1>
+<div id="jarvis"></div>
+<p id="estado">DESCONECTADO</p>
+<input id="key" placeholder="Pega tu clave Gemini AIza...">
+<button onclick="guardar()">Guardar Internet</button><br>
+<button onclick="hablar()">🎤 HABLAR</button>
+<p id="texto"></p>
+<script>
+let apiKey = localStorage.getItem('gemini') || '';
+if(apiKey){document.getElementById('key').value=apiKey; document.getElementById('estado').innerText='CONECTADO JEFE';}
+function guardar(){
+ apiKey=document.getElementById('key').value;
+ localStorage.setItem('gemini',apiKey);
+ document.getElementById('estado').innerText='CONECTADO JEFE';
+ alert('Internet guardado!');
+}
+async function hablar(){
+ let rec = new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+ rec.lang='es-ES'; rec.start();
+ rec.onresult=async e=>{
+  let t=e.results[0][0].transcript;
+  document.getElementById('texto').innerText='Tu: '+t;
+  responder(t);
+ }
+}
+async function responder(texto){
+ if(!apiKey){speak('Jefe, pega tu clave de internet primero'); return;}
+ let r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{
+  method:'POST', headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({contents:[{parts:[{text:`Eres JARVIS de Iron Man, asistente de Tony Stark. Responde corto en español. Usuario dice: ${texto}`}]}]})
+ });
+ let data = await r.json();
+ let resp = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Error de conexión jefe';
+ document.getElementById('texto').innerText+='\nJARVIS: '+resp;
+ speak(resp);
+}
+function speak(t){
+ let u = new SpeechSynthesisUtterance(t);
+ u.lang='es-ES'; speechSynthesis.speak(u);
+}
+</script>
+</body>
+</html>
